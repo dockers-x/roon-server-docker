@@ -1,25 +1,12 @@
 #!/bin/bash
 
-# Default to official Roon download if ROON_PACKAGE_URI is not set
-ROON_PACKAGE_URI=${ROON_PACKAGE_URI:-"http://download.roonlabs.com/builds/RoonServer_linuxx64.tar.bz2"}
-
 echo "Starting RoonServer with user $(whoami)"
-echo "Using Roon package URI: ${ROON_PACKAGE_URI}"
 
-# install Roon if not present
+# Verify RoonServer installation (should already be installed during build)
 if [ ! -f /opt/RoonServer/start.sh ]; then
-  echo "Downloading Roon Server from ${ROON_PACKAGE_URI}"
-  
-  # Download with better error handling
-  if wget --progress=bar:force --tries=3 --timeout=30 -O - "${ROON_PACKAGE_URI}" | tar -xvj --overwrite -C /opt; then
-    echo "Successfully downloaded and extracted Roon Server"
-  else
-    echo "Error: Unable to download or extract Roon Server from ${ROON_PACKAGE_URI}"
-    echo "Please check if the URL is accessible and contains a valid RoonServer package"
-    exit 1
-  fi
-else
-  echo "Roon Server is already installed, skipping download"
+  echo "Error: RoonServer not found! This should have been installed during Docker build."
+  echo "Please check the Dockerfile and rebuild the image."
+  exit 1
 fi
 
 echo "Verifying Roon installation"

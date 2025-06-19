@@ -34,7 +34,7 @@ RUN apt install --no-install-recommends -y -q usbutils
 RUN apt install --no-install-recommends -y -q udev
 # app prerequisites
 #  - Docker healthcheck: curl
-#  - App entrypoint downloads Roon: wget bzip2
+#  - App entrypoint downloads Roon: wget bzip2 (needed for build-time download)
 #  - set timezone: tzdata
 RUN apt install --no-install-recommends -y -q curl
 RUN apt install --no-install-recommends -y -q wget
@@ -47,12 +47,37 @@ RUN apt clean -y -q
 RUN rm -rf /var/lib/apt/lists/*
 
 ####################
+## roon download stage
+####################
+FROM base AS roon-downloader
+
+# Accept ROON_PACKAGE_URI as build argument
+ARG ROON_PACKAGE_URI="http://download.roonlabs.com/builds/RoonServer_linuxx64.tar.bz2"
+
+# Download and extract RoonServer during build
+RUN echo "Downloading RoonServer from: ${ROON_PACKAGE_URI}" && \
+    mkdir -p /tmp/roon-download && \
+    cd /tmp/roon-download && \
+    wget --progress=bar:force --tries=3 --timeout=60 -O RoonServer_linuxx64.tar.bz2 "${ROON_PACKAGE_URI}" && \
+    echo "Extracting RoonServer..." && \
+    mkdir -p /opt && \
+    tar -xjf RoonServer_linuxx64.tar.bz2 -C /opt && \
+    echo "Verifying extraction..." && \
+    ls -la /opt/RoonServer/ && \
+    echo "Cleaning up downloaded archive..." && \
+    rm -rf /tmp/roon-download && \
+    echo "RoonServer installation completed"
+
+####################
 ## application stage
 ####################
-FROM scratch
-COPY --from=base / /
+FROM base AS final
+
 LABEL maintainer="czyt"
 LABEL source="https://github.com/dockers-x/roon-server-docker"
+
+# Copy RoonServer from downloader stage
+COPY --from=roon-downloader /opt/RoonServer /opt/RoonServer
 
 # Roon documented ports
 #  - multicast (discovery?)
@@ -113,18 +138,14 @@ RUN if [ "${CONTAINER_USER}" != "ubuntu" ]; \
 	fi
 RUN usermod -aG audio ${CONTAINER_USER}
 
-# Accept ROON_PACKAGE_URI as build argument
-ARG ROON_PACKAGE_URI="http://download.roonlabs.com/builds/RoonServer_linuxx64.tar.bz2"
-
 # copy application files
 COPY app/entrypoint.sh /entrypoint.sh
 RUN  chmod +x /entrypoint.sh
 COPY README.md /README.md
 
 # configure filesystem
-## map a volume to this location to retain Roon Server data
-RUN mkdir -p /opt/RoonServer \
-	&& chown ${CONTAINER_USER}:${CONTAINER_USER} /opt/RoonServer
+## RoonServer is already installed, just set ownership
+RUN chown -R ${CONTAINER_USER}:${CONTAINER_USER} /opt/RoonServer
 ## map a volume to this location to retain Roon Server cache
 RUN mkdir -p /var/roon \
 	&& chown ${CONTAINER_USER}:${CONTAINER_USER} /var/roon
@@ -143,7 +164,6 @@ ARG DISPLAY=localhost:0.0
 ENV DISPLAY=${DISPLAY}
 ENV ROON_DATAROOT=/var/roon
 ENV ROON_ID_DIR=/var/roon
-ENV ROON_PACKAGE_URI=${ROON_PACKAGE_URI}
 
 ENTRYPOINT ["/entrypoint.sh"]
 HEALTHCHECK --interval=1m --timeout=1s \
