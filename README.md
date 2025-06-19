@@ -61,7 +61,7 @@ docker run \
   --volume ~/roon/music:/music:ro \
   --network host \
   --privileged \
-  elgeeko/roon-server
+  czyt/roon-server
 ```
 
 ### Run in macvlan mode (more secure)
@@ -90,7 +90,7 @@ docker run \
   --volume ~/roon/music:/music:ro \
   --network roon \
   --ip 192.168.1.2 \
-  elgeeko/roon-server
+  czyt/roon-server
 ```
 
 ## Run the container in bridged mode
