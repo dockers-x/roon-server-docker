@@ -51,8 +51,8 @@ RUN rm -rf /var/lib/apt/lists/*
 ####################
 FROM scratch
 COPY --from=base / /
-LABEL maintainer="elgeeko1"
-LABEL source="https://github.com/elgeeko1/roon-server-docker"
+LABEL maintainer="czyt"
+LABEL source="https://github.com/dockers-x/roon-server-docker"
 
 # Roon documented ports
 #  - multicast (discovery?)
@@ -113,6 +113,9 @@ RUN if [ "${CONTAINER_USER}" != "ubuntu" ]; \
 	fi
 RUN usermod -aG audio ${CONTAINER_USER}
 
+# Accept ROON_PACKAGE_URI as build argument
+ARG ROON_PACKAGE_URI="http://download.roonlabs.com/builds/RoonServer_linuxx64.tar.bz2"
+
 # copy application files
 COPY app/entrypoint.sh /entrypoint.sh
 RUN  chmod +x /entrypoint.sh
@@ -140,6 +143,7 @@ ARG DISPLAY=localhost:0.0
 ENV DISPLAY=${DISPLAY}
 ENV ROON_DATAROOT=/var/roon
 ENV ROON_ID_DIR=/var/roon
+ENV ROON_PACKAGE_URI=${ROON_PACKAGE_URI}
 
 ENTRYPOINT ["/entrypoint.sh"]
 HEALTHCHECK --interval=1m --timeout=1s \
