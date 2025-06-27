@@ -10,8 +10,7 @@ services:
     user: ubuntu
     volumes:
       - ~/music:/music:ro # TODO: replace ~/music with your music directory
-      - roon-server-data:/opt/RoonServer
-      - roon-server-cache:/var/roon
+      - roon-server-data:/var/roon
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
 
