@@ -30,7 +30,12 @@ jobs:
         if [ "${{ github.event_name }}" = "release" ]; then
           echo "release_tag=${{ github.event.release.tag_name }}" >> "$GITHUB_OUTPUT"
         elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-          echo "release_tag=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+          version="${{ inputs.version }}"
+          if [[ "$version" == v* ]]; then
+            echo "release_tag=$version" >> "$GITHUB_OUTPUT"
+          else
+            echo "release_tag=v$version" >> "$GITHUB_OUTPUT"
+          fi
         else
           echo "release_tag=latest" >> "$GITHUB_OUTPUT"
         fi
@@ -49,7 +54,7 @@ jobs:
         if [ "${{ github.event_name }}" = "release" ]; then
           echo "ROON_PACKAGE_URI=https://github.com/${{ github.repository }}/releases/download/${{ github.event.release.tag_name }}/RoonServer_linuxx64.tar.bz2" >> "$GITHUB_OUTPUT"
         elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-          echo "ROON_PACKAGE_URI=https://github.com/${{ github.repository }}/releases/download/${{ inputs.version }}/RoonServer_linuxx64.tar.bz2" >> "$GITHUB_OUTPUT"
+          echo "ROON_PACKAGE_URI=https://github.com/${{ github.repository }}/releases/download/${{ steps.release.outputs.release_tag }}/RoonServer_linuxx64.tar.bz2" >> "$GITHUB_OUTPUT"
         else
           echo "ROON_PACKAGE_URI=http://download.roonlabs.com/builds/RoonServer_linuxx64.tar.bz2" >> "$GITHUB_OUTPUT"
         fi
